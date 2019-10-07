@@ -272,12 +272,27 @@ class ReplicateAdapter implements AdapterInterface
      */
     protected function ensureSeekable($resource, $path)
     {
-        if (Util::isSeekableStream($resource) && rewind($resource)) {
+        if (self::safetyIsSeekableStream($resource) && rewind($resource)) {
             return $resource;
         }
 
         $stream = $this->source->readStream($path);
 
         return $stream ? $stream['stream'] : false;
+    }
+
+    /**
+     * Supress `Warning: stream_get_meta_data(): supplied resource is not a valid stream resource`
+     */
+    private static function safetyIsSeekableStream($resource)
+    {
+        $orig = error_reporting();
+        error_reporting($orig & ~\E_WARNING);
+
+        $result = Util::isSeekableStream($resource);
+
+        error_reporting($orig);
+
+        return $result;
     }
 }
